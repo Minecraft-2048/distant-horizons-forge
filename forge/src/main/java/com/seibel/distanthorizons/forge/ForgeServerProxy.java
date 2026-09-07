@@ -26,7 +26,11 @@ import net.minecraftforge.event.world.WorldEvent;
 import net.minecraftforge.event.level.ChunkEvent;
 import net.minecraftforge.event.level.LevelEvent;
 #endif
+#if MC_VER <= MC_1_21_11
 import net.minecraftforge.eventbus.api.SubscribeEvent;
+#else
+import net.minecraftforge.eventbus.api.listener.SubscribeEvent;
+#endif
 
 #if MC_VER >= MC_1_19_4
 import net.minecraft.core.registries.Registries;
@@ -168,8 +172,13 @@ public class ForgeServerProxy implements AbstractModInitializer.IEventProxy
 	
 	private static ServerLevelWrapper getServerLevelWrapper(ResourceKey<Level> resourceKey, PlayerEvent event)
 	{
+		#if MC_VER <= MC_1_21_11
 		//noinspection DataFlowIssue (possible NPE after getServer())
 		return getServerLevelWrapper(event.getEntity().getServer().getLevel(resourceKey));
+		#else
+		// MC 26 dropped Player.getServer(); reach the server through the player's level instead
+		return getServerLevelWrapper(event.getEntity().level().getServer().getLevel(resourceKey));
+		#endif
 	}
 	
 	private static ServerPlayerWrapper getServerPlayerWrapper(PlayerEvent event) {

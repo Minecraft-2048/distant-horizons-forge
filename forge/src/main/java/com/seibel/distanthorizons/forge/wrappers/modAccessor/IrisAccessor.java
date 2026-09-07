@@ -19,34 +19,28 @@
 
 package com.seibel.distanthorizons.forge.wrappers.modAccessor;
 
-import com.seibel.distanthorizons.core.wrapperInterfaces.modAccessor.IModChecker;
-import net.minecraftforge.fml.ModList;
+// Oculus was the Forge fork of Iris and stopped at 1.20.1. From MC 26 onwards the shader mod on
+// Forge is the Iris port itself, which registers under the mod id "iris", so this accessor talks
+// to the same IrisApi the neoforge module uses.
+#if MC_VER <= MC_1_21_11
+#else
 
-import java.io.File;
+import com.seibel.distanthorizons.core.wrapperInterfaces.modAccessor.IIrisAccessor;
 
-public class ModChecker implements IModChecker
+import net.irisshaders.iris.Iris;
+import net.irisshaders.iris.api.v0.IrisApi;
+
+public class IrisAccessor implements IIrisAccessor
 {
-	public static final ModChecker INSTANCE = new ModChecker();
-	
-	// Forge 26.x made ModList fully static, so there is no ModList.get() to call any more.
 	@Override
-	public boolean isModLoaded(String modid)
-	{
-		#if MC_VER <= MC_1_21_11
-		return ModList.get().isLoaded(modid);
-		#else
-		return ModList.isLoaded(modid);
-		#endif
-	}
+	public String getModName() { return Iris.MODID; }
 
 	@Override
-	public File modLocation(String modid)
-	{
-		#if MC_VER <= MC_1_21_11
-		return ModList.get().getModFileById(modid).getFile().getFilePath().toFile();
-		#else
-		return ModList.getModFileById(modid).getFile().getFilePath().toFile();
-		#endif
-	}
-	
+	public boolean isShaderPackInUse() { return IrisApi.getInstance().isShaderPackInUse(); }
+
+	@Override
+	public boolean isRenderingShadowPass() { return IrisApi.getInstance().isRenderingShadowPass(); }
+
 }
+
+#endif

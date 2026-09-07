@@ -18,11 +18,9 @@ import com.seibel.distanthorizons.common.wrappers.minecraft.MinecraftClientWrapp
 import com.seibel.distanthorizons.core.config.Config;
 import com.seibel.distanthorizons.core.config.ConfigHandler;
 import com.seibel.distanthorizons.core.config.types.*;
-import com.seibel.distanthorizons.common.wrappers.gui.updater.ChangelogScreen;
 import com.seibel.distanthorizons.core.config.types.enums.EConfigCommentTextPosition;
 import com.seibel.distanthorizons.core.config.types.enums.EConfigValidity;
 import com.seibel.distanthorizons.core.dependencyInjection.SingletonInjector;
-import com.seibel.distanthorizons.core.jar.updater.SelfUpdater;
 import com.seibel.distanthorizons.core.logging.DhLoggerBuilder;
 import com.seibel.distanthorizons.core.util.AnnotationUtil;
 import com.seibel.distanthorizons.core.wrapperInterfaces.config.IConfigGui;
@@ -176,9 +174,9 @@ class DhConfigScreen extends DhScreen
 		}
 		
 		// Changelog button
-		if (Config.Client.Advanced.AutoUpdater.enableAutoUpdater.get()
-			// we only have changelogs for stable builds		
-			&& !ModInfo.IS_DEV_BUILD)
+		// Le bouton de changelog etait conditionne a l'auto-updater, retire de cette build
+		// Forge ; il ne reste que la condition de build stable.
+		if (!ModInfo.IS_DEV_BUILD)
 		{
 			this.addBtn(new TexturedButtonWidget(
 				#if MC_VER <= MC_1_12_2
@@ -203,15 +201,9 @@ class DhConfigScreen extends DhScreen
 				// Create the button and tell it where to go
 				#if MC_VER > MC_1_12_2
 				(buttonWidget) -> {
-					ChangelogScreen changelogScreen = new ChangelogScreen(this);
-					if (changelogScreen.usable)
-					{
-						DhScreenUtil.setScreen(changelogScreen);
-					}
-					else
-					{
-						LOGGER.warn("Changelog was not able to open");
-					}
+					// Ecran de changelog retire de cette build Forge : il telechargeait les notes
+					// de version depuis Modrinth, ce que la moderation CurseForge interdit.
+					LOGGER.info("The changelog screen is not available in this build.");
 				},
 				#endif
 				// Add a title to the button
@@ -913,7 +905,7 @@ class DhConfigScreen extends DhScreen
 			#endif);
 		
 		// If the update is pending, display this message to inform the user that it will apply when the game restarts
-		if (SelfUpdater.deleteOldJarOnJvmShutdown)
+		if (false) // auto-updater retire
 		{
 			this.DhDrawString(
 				#if MC_VER > MC_1_12_2	
@@ -1028,15 +1020,9 @@ class DhConfigScreen extends DhScreen
 		super.actionPerformed(button);
 		if(button.id == changelogButton_id)
 		{
-			ChangelogScreen changelogScreen = new ChangelogScreen(this);
-			if (changelogScreen.usable)
-			{
-				DhScreenUtil.setScreen(changelogScreen);
-			}
-			else
-			{
-				LOGGER.warn("Changelog was not able to open");
-			}
+					// Ecran de changelog retire de cette build Forge : il telechargeait les notes
+					// de version depuis Modrinth, ce que la moderation CurseForge interdit.
+					LOGGER.info("The changelog screen is not available in this build.");
 		}
 	}
 	

@@ -9,7 +9,6 @@ issueTrackerURL = "${issues}"
     version = "${version}" #//mandatory, gets the version number from jar populated by the build.gradle script
     displayName = "${mod_name}" #//mandatory
     authors = ["James Seibel", "Leonardo Amato", "Cola", "coolGi", "Ran", "Leetom", "pshsh"] # Should be done with `$authors`, but architectury complains
-    #//updateJSONURL="https://change.me.example.invalid/updates.json" # A URL to query for updates for this mod. See the JSON update specification https://mcforge.readthedocs.io/en/latest/gettingstarted/autoupdate/
     displayURL = "${homepage}"
     description = "${description}" #//mandatory. The description text for the mod
     logoFile = "dh_forge_logo.png" #// can't contain a file path due to an old forge limitation https://github.com/MinecraftForge/MinecraftForge/issues/7348
@@ -40,5 +39,14 @@ issueTrackerURL = "${issues}"
 modId = "oculus"
 mandatory = false
 versionRange = "[1.8.0,)" # Iris/Oculus 1.8.0 added support for DH API 3+, so anything below that won't work
+ordering = "AFTER"
+side = "CLIENT"
+
+# Oculus stopped at 1.20.1. On MC 26 the shader mod on Forge is the Iris port, under the id "iris".
+# Both entries are optional, so listing the one that does not exist on a given version is harmless.
+[[dependencies.distanthorizons]]
+modId = "iris"
+mandatory = false
+versionRange = "[0,)"
 ordering = "AFTER"
 side = "CLIENT"

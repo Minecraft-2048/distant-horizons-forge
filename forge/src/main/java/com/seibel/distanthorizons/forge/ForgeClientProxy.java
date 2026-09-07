@@ -48,7 +48,9 @@ import net.minecraftforge.event.level.ChunkEvent;
 import net.minecraftforge.event.level.LevelEvent;
 #endif
 
-#if MC_VER >= MC_1_18_2
+// Forge 26.x no longer ships RenderLevelStageEvent; on those versions the render hooks live in
+// MixinChunkSectionsToRender / MixinGameRenderer, the same way the Fabric module does it.
+#if MC_VER >= MC_1_18_2 && MC_VER <= MC_1_21_11
 import net.minecraftforge.client.event.RenderLevelStageEvent;
 #endif
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
@@ -64,7 +66,11 @@ import com.seibel.distanthorizons.common.wrappers.chunk.ChunkWrapper;
 import net.minecraft.client.Minecraft;
 import net.minecraftforge.client.event.InputEvent;
 import net.minecraftforge.event.TickEvent;
+#if MC_VER <= MC_1_21_11
 import net.minecraftforge.eventbus.api.SubscribeEvent;
+#else
+import net.minecraftforge.eventbus.api.listener.SubscribeEvent;
+#endif
 import org.lwjgl.opengl.GL33;
 
 import java.util.concurrent.AbstractExecutorService;
@@ -215,6 +221,7 @@ public class ForgeClientProxy implements AbstractModInitializer.IEventProxy
 	// rendering //
 	//===========//
 	
+	#if MC_VER <= MC_1_21_11
 	@SubscribeEvent
 	#if MC_VER >= MC_1_18_2
 	public void afterLevelRenderEvent(RenderLevelStageEvent event)
@@ -243,6 +250,10 @@ public class ForgeClientProxy implements AbstractModInitializer.IEventProxy
 			}
 		}
 	}
+	#else
+	// MC 26.2: rendering is driven entirely by MixinChunkSectionsToRender and MixinGameRenderer,
+	// exactly like the Fabric module, so there is no render event to subscribe to here.
+	#endif
 	
 	
 }

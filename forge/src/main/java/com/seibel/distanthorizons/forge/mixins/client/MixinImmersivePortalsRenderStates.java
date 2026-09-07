@@ -9,11 +9,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Pseudo
-#if MC_VER <= MC_1_16_5
-@Mixin(targets = IImmersivePortalsAccessor.INJECTION_CLASS_1_16)
-#else
 @Mixin(targets = IImmersivePortalsAccessor.INJECTION_CLASS)
-#endif
 public class MixinImmersivePortalsRenderStates
 {
 	

@@ -31,13 +31,24 @@ import com.seibel.distanthorizons.coreapi.ModInfo;
 import com.seibel.distanthorizons.forge.wrappers.modAccessor.ImmersivePortalsAccessorForge;
 import com.seibel.distanthorizons.forge.wrappers.modAccessor.ModChecker;
 import com.seibel.distanthorizons.forge.wrappers.modAccessor.OptifineAccessor;
+#if MC_VER <= MC_1_21_11
 import com.seibel.distanthorizons.forge.wrappers.modAccessor.OculusAccessor;
+#else
+import com.seibel.distanthorizons.forge.wrappers.modAccessor.IrisAccessor;
+import net.minecraftforge.eventbus.api.bus.BusGroup;
+#endif
 
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.server.MinecraftServer;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.RegisterCommandsEvent;
+// EventBus 7 (Forge 26.x) moved the priority constants out of net.minecraftforge.eventbus.api
+// and turned them into byte constants on Priority.
+#if MC_VER <= MC_1_21_11
 import net.minecraftforge.eventbus.api.EventPriority;
+#else
+import net.minecraftforge.eventbus.api.listener.Priority;
+#endif
 import net.minecraftforge.fml.ModLoadingContext;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.lifecycle.*;
@@ -55,8 +66,10 @@ import net.minecraftforge.fml.ExtensionPoint;
 import net.minecraftforge.fmlclient.ConfigGuiHandler;
 #elif MC_VER >= MC_1_18_2 && MC_VER < MC_1_19_2
 import net.minecraftforge.client.ConfigGuiHandler;
-#else
+#elif MC_VER <= MC_1_21_11
 import net.minecraftforge.client.ConfigScreenHandler;
+#else
+// MC 26.2's Forge registers the config screen straight on MinecraftForge, no extension point
 #endif
 
 // these imports change due to forge refactoring classes in 1.19
@@ -78,12 +91,23 @@ import java.util.function.Consumer;
 @SuppressWarnings("deprecation") // FMLJavaModLoadingContext has been deprecated
 public class ForgeMain extends AbstractModInitializer
 {
+	#if MC_VER <= MC_1_21_11
 	public ForgeMain()
 	{
 		// Register the mod initializer (Actual event registration is done in the different proxies)
 		FMLJavaModLoadingContext.get().getModEventBus().addListener((FMLClientSetupEvent e) -> this.onInitializeClient());
 		FMLJavaModLoadingContext.get().getModEventBus().addListener((FMLDedicatedServerSetupEvent e) -> this.onInitializeServer());
 	}
+	#else
+	// Forge 26.x injects the loading context into the @Mod constructor and no longer exposes a
+	// single mod event bus; each mod-bus event is reached through getBus(modBusGroup) instead.
+	public ForgeMain(FMLJavaModLoadingContext context)
+	{
+		BusGroup modBusGroup = context.getModBusGroup();
+		FMLClientSetupEvent.getBus(modBusGroup).addListener(e -> this.onInitializeClient());
+		FMLDedicatedServerSetupEvent.getBus(modBusGroup).addListener(e -> this.onInitializeServer());
+	}
+	#endif
 	
 	@Override
 	protected void createInitialSharedBindings()
@@ -104,26 +128,40 @@ public class ForgeMain extends AbstractModInitializer
 	protected void initializeModCompat()
 	{
 		this.tryCreateModCompatAccessor("optifine", IOptifineAccessor.class, OptifineAccessor::new);
+		#if MC_VER <= MC_1_21_11
 		this.tryCreateModCompatAccessor("oculus", IIrisAccessor.class, OculusAccessor::new);
+		#else
+		// Oculus stopped at 1.20.1; on Forge 26.2 the shader mod is the Iris port, mod id "iris"
+		this.tryCreateModCompatAccessor("iris", IIrisAccessor.class, IrisAccessor::new);
+		#endif
 		IModChecker modChecker = SingletonInjector.INSTANCE.get(IModChecker.class);
 		this.tryCreateModCompatAccessor(IImmersivePortalsAccessor.MOD_ID_ARRAY, IImmersivePortalsAccessor.class, ImmersivePortalsAccessorForge::new);
-		
+
 		#if MC_VER < MC_1_17_1
 		ModLoadingContext.get().registerExtensionPoint(ExtensionPoint.CONFIGGUIFACTORY,
 				() -> (client, parent) -> GetConfigScreen.getScreen(parent));
 		#elif MC_VER >= MC_1_17_1 && MC_VER < MC_1_19_2
 		ModLoadingContext.get().registerExtensionPoint(ConfigGuiHandler.ConfigGuiFactory.class,
 				() -> new ConfigGuiHandler.ConfigGuiFactory((client, parent) -> GetConfigScreen.getScreen(parent)));
-		#else
+		#elif MC_VER <= MC_1_21_11
 		ModLoadingContext.get().registerExtensionPoint(ConfigScreenHandler.ConfigScreenFactory.class,
 				() -> new ConfigScreenHandler.ConfigScreenFactory((client, parent) -> GetConfigScreen.getScreen(parent)));
+		#else
+		// Forge 26.x dropped the extension point in favour of this one-liner
+		MinecraftForge.registerConfigScreen((client, parent) -> GetConfigScreen.getScreen(parent));
 		#endif
-		
+
 	}
-	
+
 	@Override
 	protected void subscribeRegisterCommandsEvent(Consumer<CommandDispatcher<CommandSourceStack>> eventHandler)
-	{ MinecraftForge.EVENT_BUS.addListener((RegisterCommandsEvent e) -> { eventHandler.accept(e.getDispatcher()); }); }
+	{
+		#if MC_VER <= MC_1_21_11
+		MinecraftForge.EVENT_BUS.addListener((RegisterCommandsEvent e) -> { eventHandler.accept(e.getDispatcher()); });
+		#else
+		RegisterCommandsEvent.BUS.addListener(e -> eventHandler.accept(e.getDispatcher()));
+		#endif
+	}
 	
 	@Override
 	protected void subscribeClientStartedEvent(Runnable eventHandler)
@@ -136,10 +174,14 @@ public class ForgeMain extends AbstractModInitializer
 	@Override
 	protected void subscribeServerStartingEvent(Consumer<MinecraftServer> eventHandler)
 	{
+		#if MC_VER <= MC_1_21_11
 		MinecraftForge.EVENT_BUS.addListener(EventPriority.HIGH, (#if MC_VER >= MC_1_18_2 ServerAboutToStartEvent #else FMLServerAboutToStartEvent #endif e) ->
 		{
 			eventHandler.accept(e.getServer());
 		});
+		#else
+		ServerAboutToStartEvent.BUS.addListener(Priority.HIGH, e -> eventHandler.accept(e.getServer()));
+		#endif
 	}
 	
 	@Override

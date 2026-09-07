@@ -319,6 +319,22 @@ if (isNotCommonProject) {
         configurations = [project.configurations.shadowMe]
         def librariesLocation = "DistantHorizons.libraries"
 
+        // Portage Forge : CurseForge refuse tout mod capable de telecharger des fichiers depuis
+        // une source externe. Neutraliser le code ne suffit pas - le premier envoi corrige a ete
+        // refuse alors qu'il ne contenait plus aucune URL - donc les classes elles-memes sortent du
+        // jar : l'installeur autonome, l'auto-updater et les ecrans qui les pilotaient.
+        // Descripteurs Maven des bibliotheques embarquees : inutiles a l'execution, et celui de
+    // sqlite-jdbc contient le mot "download" dans son pom. Apres trois refus de moderation pour
+    // "telechargement depuis des sources externes", on ne laisse aucune occurrence dans le jar.
+    exclude "META-INF/maven/**"
+    exclude "com/seibel/distanthorizons/core/jar/installer/**"
+        exclude "com/seibel/distanthorizons/core/jar/updater/**"
+        exclude "com/seibel/distanthorizons/core/jar/tui/**"
+        exclude "com/seibel/distanthorizons/core/jar/JarMain*"
+        exclude "com/seibel/distanthorizons/coreapi/util/jar/DeleteOnUnlock*"
+        exclude "com/seibel/distanthorizons/common/wrappers/gui/updater/**"
+        exclude "com/seibel/distanthorizons/common/commonMixins/DhUpdateScreenBase*"
+
         // LZ4 compression
         relocate "net.jpountz", "${librariesLocation}.jpountz"
 

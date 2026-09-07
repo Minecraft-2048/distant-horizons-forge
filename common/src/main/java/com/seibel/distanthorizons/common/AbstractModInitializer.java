@@ -21,7 +21,6 @@ import com.seibel.distanthorizons.core.dependencyInjection.ModAccessorInjector;
 import com.seibel.distanthorizons.core.dependencyInjection.SingletonInjector;
 import com.seibel.distanthorizons.core.enums.MinecraftTextFormat;
 import com.seibel.distanthorizons.core.jar.ModJarInfo;
-import com.seibel.distanthorizons.core.jar.updater.SelfUpdater;
 import com.seibel.distanthorizons.core.logging.DhLoggerBuilder;
 import com.seibel.distanthorizons.core.render.renderer.AbstractDebugWireframeRenderer;
 import com.seibel.distanthorizons.core.render.renderer.StubDebugWireframeRenderer;
@@ -245,16 +244,10 @@ public abstract class AbstractModInitializer
 	
 	private void checkForUpdates()
 	{
-		if (Config.Client.Advanced.AutoUpdater.enableAutoUpdater.get())
-		{
-			if (Config.Client.Advanced.AutoUpdater.enableSilentUpdates.get())
-			{
-				LOGGER.info("Silent updates are not allowed for dedicated servers; force disabling.");
-				Config.Client.Advanced.AutoUpdater.enableSilentUpdates.set(false);
-			}
-			
-			SelfUpdater.onStart();
-		}
+		// L'auto-updater est retire de cette build Forge : la moderation CurseForge refuse
+		// tout mod capable de telecharger des fichiers depuis une source externe. Les classes
+		// de telechargement sont exclues du jar, et cette methode ne lit meme plus la
+		// configuration correspondante, qui n'existe plus.
 	}
 	
 	private void postInit()

@@ -16,6 +16,11 @@ def addMod(path, enabled) {
 // ==================== Dependencies ====================
 
 dependencies {
+    // Forge 26.2 ships MixinExtras (see its pom: mixinextras-forge 0.5.4), but unimined does not put
+    // it on the compile classpath, so common's @WrapOperation mixins fail to compile without this.
+    compileOnly("io.github.llamalad7:mixinextras-common:0.5.4")
+    annotationProcessor("io.github.llamalad7:mixinextras-common:0.5.4")
+
     // TerraForged
     addMod("curse.maven:TerraForged-363820:${rootProject.terraforged_version}", rootProject.enable_terraforged)
     
@@ -24,6 +29,16 @@ dependencies {
     
     // Oculus (Iris port)
     addMod("maven.modrinth:oculus:${rootProject.oculus_version}", rootProject.enable_oculus)
+
+    // Iris. There is no published Forge build, so IrisAccessor compiles against the sibling port's
+    // jar. compileOnly is enough: tryCreateModCompatAccessor only instantiates the accessor when
+    // the "iris" mod is actually loaded.
+    def irisForgeJar = rootProject.file("../iris/build/mods/iris-forge-1.11.2+mc26.2.jar")
+    if (irisForgeJar.exists()) {
+        compileOnly files(irisForgeJar)
+    } else {
+        logger.warn("Iris Forge jar not found at ${irisForgeJar}; the Iris compat accessor will not compile.")
+    }
     
     // TODO: Check if this is still needed and if so ensure this code works for MC 26.1+
     // (potential) hack fix for MC 1.20.6 and later, force jopt-simple to be exactly 5.0.4 because Mojang ships that version, but some transitive dependencies request 6.0+
@@ -52,4 +67,16 @@ processResources {
 tasks.named('runClient') {
     dependsOn(tasks.named('copyAllResources'))
     finalizedBy(deleteResources)
+
+    // cpw.mods.util.ZipUtils reflects into jdk.nio.zipfs.ZipPath while FML boots, which the dev
+    // launcher's module graph does not allow on JDK 25 — without these the client dies with
+    // ClassNotFoundException: jdk.nio.zipfs.ZipPath before the window ever opens.
+    // doFirst so the flags survive unimined's own afterEvaluate configuration of the task.
+    doFirst {
+        jvmArgs += [
+            '--add-modules', 'jdk.zipfs',
+            '--add-opens', 'jdk.zipfs/jdk.nio.zipfs=ALL-UNNAMED',
+            '--add-exports', 'jdk.zipfs/jdk.nio.zipfs=ALL-UNNAMED',
+        ]
+    }
 }
